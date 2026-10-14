@@ -1,0 +1,91 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "postbox",	"compatibility_date": "2025-11-28",
+	"main": "./workers/app.ts",
+	"observability": {
+		"enabled": true
+	},
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"vars": {
+		// Production deploys must also define POLICY_AUD and TEAM_DOMAIN.
+		// TEAM_DOMAIN may be the base Access URL or the full /cdn-cgi/access/certs URL.
+		// The worker now fails closed outside local development if Access is not configured.
+		"DOMAINS": "example.com",
+		"EMAIL_ADDRESSES": [],
+		// Local dev identity for the team layer. When set, this email is used
+		// as the requester (and bootstraps as team admin on first run).
+		// Leave empty to default to admin@example.com in dev.
+		"DEV_USER_EMAIL": "",
+		// Shared secret for the provider delivery webhook
+		// (POST /api/v1/delivery/webhook, header x-delivery-secret).
+		// Generate with: openssl rand -hex 32. Leave empty to disable
+		// the webhook endpoint (it returns 503). Cloudflare's Email
+		// Service does not emit delivery callbacks, so this is for a
+		// future/alternate provider integration — see MODULE2.md.
+		"DELIVERY_WEBHOOK_SECRET": ""
+	},
+	"send_email": [
+		{
+			"name": "EMAIL",
+			"remote": true
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "BUCKET",
+			"bucket_name": "postbox",
+			"preview_bucket_name": "postbox"
+		}
+	],
+	"ai": {
+		"binding": "AI"
+	},
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "MAILBOX",
+				"class_name": "MailboxDO"
+			},
+			{
+				"name": "TEAM",
+				"class_name": "TeamDO"
+			},
+			{
+				"name": "EMAIL_AGENT",
+				"class_name": "EmailAgent"
+			},
+			{
+				"name": "EMAIL_MCP",
+				"class_name": "EmailMCP"
+			}
+		]
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": [
+				"MailboxDO"
+			]
+		},
+		{
+			"tag": "v2",
+			"new_sqlite_classes": [
+				"EmailAgent"
+			]
+		},
+		{
+			"tag": "v3",
+			"new_sqlite_classes": [
+				"EmailMCP"
+			]
+		},
+		{
+			"tag": "v4",
+			"new_sqlite_classes": [
+				"TeamDO"
+			]
+		}
+	]
+}
